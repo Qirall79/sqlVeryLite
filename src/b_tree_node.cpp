@@ -135,8 +135,6 @@ void BTreeNode::readData(std::ifstream &file, Metadata& metadata, unsigned long 
             bool conditionFailed = false;
             std::map<std::string, std::string> values;
 
-
-
             for (auto serialType : serialTypes)
             {
                 unsigned long columnLength;
@@ -192,9 +190,7 @@ void BTreeNode::readData(std::ifstream &file, Metadata& metadata, unsigned long 
                 if (i < (int) metadata.columns[command.table].size()) {
                     values[metadata.columns[command.table][i]] = value;
     
-                    if (command.queryType == CONDITION_SELECT 
-                        && command.condition.first != "id"
-                        && command.condition.first == metadata.columns[command.table][i] && command.condition.second != value) {
+                    if (command.queryType == CONDITION_SELECT && command.condition.first == metadata.columns[command.table][i] && command.condition.second != Util::toLower(value)) {
                         conditionFailed = true;
                         break ;
                     }
@@ -204,14 +200,11 @@ void BTreeNode::readData(std::ifstream &file, Metadata& metadata, unsigned long 
 
                 i++;
             }
-
+            
             bool isFirst = true;
+
             values["id"] = std::to_string(rowId);
 
-            if (command.condition.first == "id" && values["id"] != command.condition.second) {
-                conditionFailed = true;
-            }  
-            
             if (!conditionFailed) {
                 // display values
                 for (auto column: command.columns) {
@@ -291,12 +284,8 @@ void BTreeNode::readRowById(std::ifstream &file, Metadata& metadata, unsigned lo
 
         if (rowId != id) continue;
 
-        
-        
         std::vector<unsigned long> serialTypes = parseRecordHeader(file);
         std::map<std::string, std::string> values;
-        
-        values["id"] = std::to_string(rowId);
 
         for (size_t col = 0; col < serialTypes.size(); col++) {
             unsigned long serialType = serialTypes[col];
@@ -335,6 +324,7 @@ void BTreeNode::readRowById(std::ifstream &file, Metadata& metadata, unsigned lo
             }
         }
 
+        values["id"] = std::to_string(rowId);
 
         bool isFirst = true;
         for (const std::string &column : command.columns) {
